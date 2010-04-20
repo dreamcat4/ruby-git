@@ -306,9 +306,16 @@ module Git
 
 
     def ignored_files
-      command_lines('ls-files', ['--others', '-i', '--exclude-standard'])
-    end
+      ignored_files = command_lines('ls-files', ['--others', '-i', '--exclude-standard'])
+      ignored_dirs = command_lines('ls-files', ['--others', '-i', '--exclude-standard', '--directory'])
 
+      Dir.chdir(@git_work_dir) do
+        ignored_dirs = ignored_dirs.map {|dir| unescape_file_name(dir)}.select {|dir| File.directory?(dir)}
+        ignored_files += Dir.glob(ignored_dirs.map {|dir| File.join(dir, "**/*")})
+      end
+
+      ignored_files
+    end
 
     def config_remote(name)
       hsh = {}
